@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22><rect width=%2216%22 height=%2216%22 fill=%22%23000080%22 /><rect x=%222%22 y=%223%22 width=%2212%22 height=%228%22 fill=%22white%22 /><rect x=%224%22 y=%2211%22 width=%222%22 height=%222%22 fill=%22white%22 /><rect x=%226%22 y=%2211%22 width=%222%22 height=%221%22 fill=%22white%22 /><rect x=%225%22 y=%225%22 width=%226%22 height=%221%22 fill=%22%23000080%22 /><rect x=%225%22 y=%228%22 width=%224%22 height=%221%22 fill=%22%23000080%22 /></svg>">
+
+  <title>Chat</title>
+  <style>
+    /* Old-school late-90s/early-2000s web vibes */
+    body {
+      font-family: "Courier New", monospace;
+      background: #c0d8ff url("https://www.transparenttextures.com/patterns/paper-fibers.png");
+      color: #000080;
+      margin: 20px;
+    }
+
+    h2 {
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #000080;
+      text-shadow: 1px 1px #ffffff;
+      border-bottom: 2px dotted #000080;
+      padding-bottom: 4px;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      /* Separate the gaps */
+      column-gap: 12px;
+      /* Horizontal spacing stays the same */
+      row-gap: 4px;
+      /* Vertical spacing is now much smaller */
+
+      /* Keep the rest of your existing styles */
+      align-items: center;
+      background: linear-gradient(90deg, #f0f8ff, #d6e6ff);
+      border: 2px groove #8fb0ff;
+      padding: 8px;
+      box-shadow: inset 1px 1px #ffffff, inset -1px -1px #7b9bd3;
+    }
+
+    label {
+      font-weight: bold;
+    }
+
+    input,
+    button,
+    select {
+      padding: 6px;
+      border: 2px inset #9bb8ff;
+      background: #f7fbff;
+      color: #000080;
+      font-family: "Courier New", monospace;
+      box-shadow: inset 1px 1px #ffffff, inset -1px -1px #7b9bd3;
+    }
+
+    button {
+      cursor: pointer;
+      border: 2px outset #9bb8ff;
+      background: linear-gradient(180deg, #f7fbff, #bfd4ff);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    button:active {
+      border-style: inset;
+      box-shadow: inset 1px 1px #7b9bd3;
+    }
+
+    #status {
+      margin-top: 6px;
+      padding: 6px;
+      background: #ffffe0;
+      border: 2px dashed #000080;
+      font-size: 12px;
+    }
+
+    #messages {
+      border: 3px double #000080;
+      padding: 10px;
+      height: 320px;
+      overflow-y: auto;
+      margin-top: 12px;
+      background: #f7fbff;
+      box-shadow: inset 2px 2px #d0defa, inset -2px -2px #ffffff;
+      scrollbar-color: #000080 #f7fbff;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      white-space: normal;
+    }
+
+    #messages div {
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+
+    #messages::-webkit-scrollbar {
+      width: 12px;
+    }
+
+    #messages::-webkit-scrollbar-track {
+      background: #f7fbff;
+    }
+
+    #messages::-webkit-scrollbar-thumb {
+      background: #9bb8ff;
+      border: 2px solid #f7fbff;
+    }
+
+    .meta {
+      color: #000;
+      font-size: 12px;
+    }
+
+    .mention {
+      color: #ff0000;
+      font-weight: bold;
+      background: #ffffcc;
+      padding: 1px 2px;
+      border-radius: 2px;
+    }
+
+    .mention-suggestions {
+      position: absolute;
+      background: #f7fbff;
+      border: 2px solid #000080;
+      border-radius: 4px;
+      max-height: 120px;
+      overflow-y: auto;
+      z-index: 100;
+      box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .mention-suggestion {
+      padding: 4px 8px;
+      cursor: pointer;
+      font-family: "Courier New", monospace;
+      font-size: 12px;
+    }
+
+    .mention-suggestion:hover {
+      background: #bfd4ff;
+    }
+
+    .mention-suggestion.selected {
+      background: #9bb8ff;
+    }
+
+    .notification-bell {
+      position: relative;
+      cursor: pointer;
+      padding: 8px;
+      border: 2px outset #9bb8ff;
+      background: linear-gradient(180deg, #f7fbff, #bfd4ff);
+      border-radius: 4px;
+      margin-left: auto;
+    }
+
+    .notification-bell:hover {
+      background: linear-gradient(180deg, #e6f0ff, #a8c0ff);
+    }
+
+    .notification-badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      background: #ff0000;
+      color: white;
+      border-radius: 50%;
+      width: 16px;
+      height: 16px;
+      font-size: 10px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #ffffff;
+    }
+
+    .notification-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: #f7fbff;
+      border: 2px solid #000080;
+      border-radius: 4px;
+      width: 300px;
+      max-width: 300px;
+      min-width: 250px;
+      max-height: 400px;
+      overflow-y: auto;
+      z-index: 1000;
+      box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      display: none;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      white-space: normal;
+    }
+
+    .notification-item {
+      padding: 8px 12px;
+      border-bottom: 1px solid #d0defa;
+      cursor: pointer;
+    }
+
+    .notification-item:hover {
+      background: #e6f0ff;
+    }
+
+    .notification-item.unread {
+      background: #ffffe0;
+      font-weight: bold;
+    }
+
+    .notification-title {
+      font-weight: bold;
+      color: #000080;
+      margin-bottom: 2px;
+      font-size: small;
+    }
+
+    .notification-room {
+      color: #0066cc;
+      background: #e6f2ff;
+      padding: 1px 4px;
+      border-radius: 3px;
+      font-weight: normal;
+    }
+
+    .notification-content {
+      font-size: 12px;
+      color: #333;
+      margin-bottom: 2px;
+    }
+
+    .notification-time {
+      font-size: 10px;
+      color: #666;
+    }
+
+    .notification-clear {
+      padding: 3px 12px;
+      background: #bfd4ff;
+      text-align: center;
+      cursor: pointer;
+      font-size: 12px;
+      border-top: 1px solid #000080;
+    }
+
+    .notification-clear:hover {
+      background: #9bb8ff;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>Private GC</h2>
+  <div class="row">
+    <label>Username <input id="username" placeholder="you" /></label>
+    <label>Room type
+      <select id="roomType">
+        <option value="group">Group</option>
+        <option value="dm">Direct</option>
+      </select>
+    </label>
+    <label>Room (group) <input id="roomName" placeholder="lobby" /></label>
+    <label>Target (dm) <input id="target" placeholder="friend" /></label>
+
+    <div style="flex-basis: 100%; height: 0;"></div>
+
+    <button id="join">Join</button>
+    <button id="leave">Leave</button>
+
+    <div class="notification-bell" id="notificationBell" style="position: relative;">
+      🔔
+      <div class="notification-badge" id="notificationBadge" style="display: none;">0</div>
+      <div class="notification-dropdown" id="notificationDropdown">
+        <div id="notificationList"></div>
+        <div class="notification-clear" id="clearNotifications">Clear All</div>
+      </div>
+    </div>
+  </div>
+  <div class="row" style="margin-top: 10px; position: relative;">
+    <input id="message" placeholder="Write a message" style="flex:1; min-width:220px;" />
+    <button id="send">Send</button>
+    <div id="mentionSuggestions" class="mention-suggestions" style="display: none;"></div>
+  </div>
+  <div id="status" class="meta"></div>
+  <div id="messages"></div>
+
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script>
+    const socket = io();
+    let username = "";
+    let currentRoom = null;
+    let currentRoomType = "group";
+    let currentTarget = null;
+    let roomUsers = [];
+    let mentionStartIndex = -1;
+    let selectedSuggestionIndex = -1;
+    const statusEl = document.getElementById("status");
+    const messagesEl = document.getElementById("messages");
+    const messageInput = document.getElementById("message");
+    const mentionSuggestionsEl = document.getElementById("mentionSuggestions");
+    const notificationBell = document.getElementById("notificationBell");
+    const notificationBadge = document.getElementById("notificationBadge");
+    const notificationDropdown = document.getElementById("notificationDropdown");
+    const notificationList = document.getElementById("notificationList");
+    const clearNotificationsBtn = document.getElementById("clearNotifications");
+    let notifications = [];
+    let unreadCount = 0;
+    let titleBlinkInterval = null;
+
+    // Request notification permission on page load
+    async function requestNotificationPermission() {
+      if ('Notification' in window) {
+        if (Notification.permission === 'default') {
+          const permission = await Notification.requestPermission();
+          console.log('Notification permission:', permission);
+        }
+      }
+    }
+
+    // Show Windows desktop notification
+    function showWindowsNotification(title, body, options = {}) {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        const notification = new Notification(title, {
+          body: body,
+          icon: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22><rect width=%2216%22 height=%2216%22 fill=%22%23000080%22 /><rect x=%222%22 y=%223%22 width=%2212%22 height=%228%22 fill=%22white%22 /><rect x=%224%22 y=%2211%22 width=%222%22 height=%222%22 fill=%22white%22 /><rect x=%226%22 y=%2211%22 width=%222%22 height=%221%22 fill=%22white%22 /><rect x=%225%22 y=%225%22 width=%226%22 height=%221%22 fill=%22%23000080%22 /><rect x=%225%22 y=%228%22 width=%224%22 height=%221%22 fill=%22%23000080%22 /></svg>',
+          tag: 'chat-mention',
+          requireInteraction: true,
+          ...options
+        });
+
+        // Auto-close notification after 5 seconds
+        setTimeout(() => {
+          notification.close();
+        }, 5000);
+
+        // Click handler to focus window
+        notification.onclick = () => {
+          window.focus();
+          notification.close();
+        };
+
+        return notification;
+      }
+      return null;
+    }
+
+    function logStatus(msg) { statusEl.textContent = msg; }
+    function formatMessageContent(content) {
+      // Replace @mentions with styled spans
+      return content.replace(/@(\w+)/g, '<span class="mention">@$1</span>');
+    }
+    function appendMessage(m) {
+      const div = document.createElement("div");
+      div.innerHTML = `<strong>${m.sender}</strong>: ${formatMessageContent(m.content)} <span class="meta">(${new Date(m.created_at).toLocaleTimeString('en-IN', { hour12: true })})</span>`;
+      messagesEl.appendChild(div);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+    function clearMessages() { messagesEl.innerHTML = ""; }
+
+    function showMentionSuggestions(filter) {
+      console.log('showMentionSuggestions called with filter:', filter);
+      console.log('roomUsers:', roomUsers);
+      console.log('username:', username);
+
+      // For testing: include some dummy users if roomUsers is empty
+      let testUsers = roomUsers;
+      if (roomUsers.length === 0 && username) {
+        testUsers = [username, 'alice', 'bob', 'charlie'];
+      }
+
+      const filteredUsers = testUsers.filter(user =>
+        user.toLowerCase().includes(filter.toLowerCase()) && user !== username
+      );
+
+      console.log('filteredUsers:', filteredUsers);
+
+      if (filteredUsers.length === 0) {
+        mentionSuggestionsEl.style.display = "none";
+        return;
+      }
+
+      mentionSuggestionsEl.innerHTML = filteredUsers.map((user, index) =>
+        `<div class="mention-suggestion ${index === selectedSuggestionIndex ? 'selected' : ''}" data-user="${user}">${user}</div>`
+      ).join('');
+
+      mentionSuggestionsEl.style.display = "block";
+      selectedSuggestionIndex = 0;
+    }
+
+    function hideMentionSuggestions() {
+      mentionSuggestionsEl.style.display = "none";
+      mentionStartIndex = -1;
+      selectedSuggestionIndex = -1;
+    }
+
+    function insertMention(username) {
+      const text = messageInput.value;
+      const beforeMention = text.substring(0, mentionStartIndex);
+      const afterMention = text.substring(messageInput.selectionStart);
+      messageInput.value = beforeMention + "@" + username + " " + afterMention;
+      hideMentionSuggestions();
+      messageInput.focus();
+      // Set cursor position after the inserted mention
+      const newCursorPos = beforeMention.length + username.length + 2;
+      messageInput.setSelectionRange(newCursorPos, newCursorPos);
+    }
+
+    function updateNotificationBadge() {
+      unreadCount = notifications.filter(n => !n.is_read).length;
+      if (unreadCount > 0) {
+        notificationBadge.textContent = unreadCount > 99 ? "99+" : unreadCount.toString();
+        notificationBadge.style.display = "flex";
+      } else {
+        notificationBadge.style.display = "none";
+      }
+
+      // Update browser tab title with blinking effect
+      const originalTitle = "Chat";
+      if (unreadCount > 0) {
+        startTitleBlink(`(${unreadCount}) ${originalTitle}`, originalTitle);
+      } else {
+        stopTitleBlink();
+        document.title = originalTitle;
+      }
+    }
+
+    function startTitleBlink(notificationTitle, originalTitle) {
+      stopTitleBlink(); // Clear any existing interval
+      let isVisible = true;
+
+      titleBlinkInterval = setInterval(() => {
+        document.title = isVisible ? notificationTitle : originalTitle;
+        isVisible = !isVisible;
+      }, 1000); // Blink every second
+    }
+
+    function stopTitleBlink() {
+      if (titleBlinkInterval) {
+        clearInterval(titleBlinkInterval);
+        titleBlinkInterval = null;
+      }
+    }
+
+    async function loadNotifications() {
+      if (!username) return;
+
+      try {
+        const res = await fetch(`/api/notifications?user=${username}`);
+        notifications = await res.json();
+        updateNotificationBadge();
+        renderNotifications();
+      } catch (error) {
+        console.error('Failed to load notifications:', error);
+      }
+    }
+
+    function renderNotifications() {
+      if (notifications.length === 0) {
+        notificationList.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">No notifications</div>';
+        return;
+      }
+
+      notificationList.innerHTML = notifications.map(notification => {
+        // Apply mention styling to the username in the title
+        const styledTitle = notification.title.replace(
+          /by (\w+)/,
+          'by <span class="mention">@$1</span>'
+        ).replace(
+          /in group: (\w+)/,
+          'in <span class="notification-room">group: $1</span>'
+        ).replace(
+          /in direct message/,
+          'in <span class="notification-room">direct message</span>'
+        );
+
+        return `
+        <div class="notification-item ${!notification.is_read ? 'unread' : ''}" data-id="${notification.id}">
+          <div class="notification-title">${styledTitle}</div>
+          <div class="notification-content">${notification.content}</div>
+          <div class="notification-time">${new Date(notification.created_at).toLocaleString('en-IN', { hour12: true })}</div>
+        </div>
+      `;
+      }).join('');
+    }
+
+    async function markNotificationsAsRead(notificationIds = []) {
+      if (!username) return;
+
+      try {
+        const res = await fetch('/api/notifications/read', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user: username, notification_ids: notificationIds })
+        });
+
+        if (res.ok) {
+          await loadNotifications();
+        }
+      } catch (error) {
+        console.error('Failed to mark notifications as read:', error);
+      }
+    }
+
+    function roomParams() {
+      const roomType = document.getElementById("roomType").value;
+      const roomName = document.getElementById("roomName").value || "lobby";
+      const target = document.getElementById("target").value || null;
+      return { roomType, roomName, target };
+    }
+
+    async function loadHistory(params) {
+      const qs = new URLSearchParams({
+        room_type: params.roomType,
+        room_name: params.roomName,
+        user: username,
+        target: params.target || ""
+      });
+      const res = await fetch(`/api/messages?${qs.toString()}`);
+      const data = await res.json();
+      clearMessages();
+      data.forEach(appendMessage);
+      markRead(params);
+
+      // Load room users for mentions
+      await loadRoomUsers(params);
+    }
+
+    async function loadRoomUsers(params) {
+      console.log('loadRoomUsers called with params:', params);
+      const qs = new URLSearchParams({
+        room_type: params.roomType,
+        room_name: params.roomName,
+        user: username,
+        target: params.target || ""
+      });
+      console.log('Fetching room users from:', `/api/room_users?${qs.toString()}`);
+      const res = await fetch(`/api/room_users?${qs.toString()}`);
+      const data = await res.json();
+      console.log('Room users response:', data);
+      roomUsers = data.users || [];
+      console.log('Updated roomUsers:', roomUsers);
+    }
+
+    function markRead(params) {
+      socket.emit("mark_read", {
+        room_type: params.roomType,
+        room_name: params.roomName,
+        target: params.target
+      });
+    }
+
+    document.getElementById("join").onclick = () => {
+      username = document.getElementById("username").value.trim();
+      if (!username) { alert("Enter username"); return; }
+      const params = roomParams();
+      if (params.roomType === "dm" && !params.target) { alert("Enter target for dm"); return; }
+      socket.emit("register", { username });
+      socket.emit("join_room", { room_type: params.roomType, room_name: params.roomName, target: params.target });
+      currentRoomType = params.roomType;
+      currentTarget = params.target;
+      currentRoom = params.roomName;
+    };
+
+    document.getElementById("leave").onclick = () => {
+      const params = roomParams();
+      socket.emit("leave_room", { room_type: params.roomType, room_name: params.roomName, target: params.target });
+      clearMessages();
+      currentRoom = null;
+      currentTarget = null;
+      logStatus("Left room");
+    };
+
+    function sendMessage() {
+      const content = document.getElementById("message").value.trim();
+      if (!content) return;
+      if (!currentRoom) { alert("Join a room first"); return; }
+      socket.emit("send_message", {
+        room_type: currentRoomType,
+        room_name: currentRoom,
+        target: currentTarget,
+        content
+      });
+      document.getElementById("message").value = "";
+    }
+
+    document.getElementById("send").onclick = sendMessage;
+    document.getElementById("message").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        if (mentionSuggestionsEl.style.display === "block") {
+          // If suggestions are shown, select the current suggestion
+          const selectedSuggestion = mentionSuggestionsEl.querySelector('.selected');
+          if (selectedSuggestion) {
+            insertMention(selectedSuggestion.dataset.user);
+          }
+        } else {
+          sendMessage();
+        }
+      } else if (e.key === "Escape") {
+        hideMentionSuggestions();
+      } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+        if (mentionSuggestionsEl.style.display === "block") {
+          e.preventDefault();
+          const suggestions = mentionSuggestionsEl.querySelectorAll('.mention-suggestion');
+          if (suggestions.length > 0) {
+            suggestions[selectedSuggestionIndex].classList.remove('selected');
+            if (e.key === "ArrowUp") {
+              selectedSuggestionIndex = selectedSuggestionIndex > 0 ? selectedSuggestionIndex - 1 : suggestions.length - 1;
+            } else {
+              selectedSuggestionIndex = selectedSuggestionIndex < suggestions.length - 1 ? selectedSuggestionIndex + 1 : 0;
+            }
+            suggestions[selectedSuggestionIndex].classList.add('selected');
+          }
+        }
+      }
+    });
+
+    document.getElementById("message").addEventListener("input", (e) => {
+      const text = messageInput.value;
+      const cursorPos = messageInput.selectionStart;
+
+      // Check if we're typing a mention (look for @ before cursor)
+      let atIndex = -1;
+      for (let i = cursorPos - 1; i >= 0; i--) {
+        if (text[i] === '@') {
+          atIndex = i;
+          break;
+        }
+        // Stop if we hit a space or beginning of line
+        if (text[i] === ' ' || text[i] === '\n') {
+          break;
+        }
+      }
+
+      if (atIndex !== -1) {
+        mentionStartIndex = atIndex;
+        const filter = text.substring(atIndex + 1, cursorPos);
+        showMentionSuggestions(filter);
+
+        // Position the suggestions dropdown relative to the input field
+        mentionSuggestionsEl.style.position = "absolute";
+        mentionSuggestionsEl.style.left = messageInput.offsetLeft + "px";
+        mentionSuggestionsEl.style.top = (messageInput.offsetTop + messageInput.offsetHeight + 2) + "px";
+        mentionSuggestionsEl.style.width = messageInput.offsetWidth + "px";
+      } else {
+        hideMentionSuggestions();
+      }
+    });
+
+    // Handle clicks on mention suggestions
+    mentionSuggestionsEl.addEventListener("click", (e) => {
+      if (e.target.classList.contains('mention-suggestion')) {
+        insertMention(e.target.dataset.user);
+      }
+    });
+
+    // Hide suggestions when clicking outside
+    document.addEventListener("click", (e) => {
+      if (!mentionSuggestionsEl.contains(e.target) && e.target !== messageInput) {
+        hideMentionSuggestions();
+      }
+
+      // Hide notification dropdown when clicking outside
+      if (!notificationBell.contains(e.target)) {
+        notificationDropdown.style.display = "none";
+      }
+    });
+
+    // Notification bell click handler
+    notificationBell.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isVisible = notificationDropdown.style.display === "block";
+      notificationDropdown.style.display = isVisible ? "none" : "block";
+
+      if (!isVisible) {
+        loadNotifications();
+      }
+    });
+
+    // Clear all notifications
+    clearNotificationsBtn.addEventListener("click", async () => {
+      await markNotificationsAsRead();
+    });
+
+    // Mark individual notification as read
+    notificationList.addEventListener("click", async (e) => {
+      const item = e.target.closest('.notification-item');
+      if (item && !item.classList.contains('unread')) return;
+
+      const notificationId = parseInt(item.dataset.id);
+      await markNotificationsAsRead([notificationId]);
+    });
+
+    socket.on("connected", () => logStatus("Socket connected"));
+    socket.on("registered", (data) => {
+      logStatus(`Registered as ${data.username}`);
+      loadNotifications();
+    });
+    socket.on("room_joined", async (data) => {
+      logStatus(`Joined ${data.room}`);
+      await loadHistory(roomParams());
+    });
+    socket.on("room_users_update", (data) => {
+      roomUsers = data.users || [];
+      console.log('Room users updated:', roomUsers);
+    });
+    socket.on("room_left", (data) => logStatus(`Left ${data.room}`));
+    socket.on("message", (m) => {
+      appendMessage(m);
+      if (m.sender !== username) { markRead(roomParams()); }
+    });
+    socket.on("read_receipt", (d) => {
+      if (d.count > 0) {
+        logStatus(`Read ${d.count} messages in ${d.room}`);
+      }
+    });
+    socket.on("mention_notification", (notification) => {
+      // Show Windows desktop notification for mentions
+      const roomInfo = notification.room.startsWith('group:') 
+        ? `in group: ${notification.room.split(':')[1]}`
+        : 'in direct message';
+      
+      showWindowsNotification(
+        `You were mentioned by ${notification.sender}`,
+        `${notification.content} ${roomInfo}`
+      );
+    });
+    socket.on("notification_update", async (data) => {
+      if (data.type === "new_notification") {
+        await loadNotifications();
+      }
+    });
+    socket.on("error", (e) => logStatus(`Error: ${e.message || e}`));
+
+    // Initialize notification permission on page load
+    requestNotificationPermission();
+  </script>
+</body>
+
+</html>
